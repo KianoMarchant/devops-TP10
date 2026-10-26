@@ -1,7 +1,7 @@
 # TP 10 — Kubernetes avanzado: Helm + Ingress
 
 ## Estructura del Chart
-
+```
 devops-portfolio/
 ├── Chart.yaml                  # metadata del chart 
 ├── values.yaml                 # valores por defecto 
@@ -17,7 +17,7 @@ devops-portfolio/
     ├── frontend.yaml           # Deployment + Service 
     ├── ingress.yaml            # Ingress con rutas 
     └── NOTES.txt               # mensaje post-instalación
-
+```
 ## Comandos principales
 
 # Validar el chart
