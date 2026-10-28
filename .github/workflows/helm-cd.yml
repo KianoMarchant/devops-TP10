@@ -73,7 +73,7 @@ jobs:
             --set backend.image.tag=alpine \
             --set frontend.image.repository=nginx \
             --set frontend.image.tag=alpine \
-            --wait --timeout 3m
+            --wait --timeout 5m
 
       - name: Smoke Test en Staging
         run: |
@@ -114,7 +114,7 @@ jobs:
             --set backend.image.tag=alpine \
             --set frontend.image.repository=nginx \
             --set frontend.image.tag=alpine \
-            --wait --timeout 3m
+            --wait --timeout 5m
 
       - name: Smoke Test Post-Despliegue en Producción
         run: |
