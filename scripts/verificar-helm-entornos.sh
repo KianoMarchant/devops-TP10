@@ -13,6 +13,7 @@ cat << "BANNER"
   ==============================================================
 BANNER
 echo -e "\033[0m"
+
 info "1. Verificación de Releases de Helm Activos"
 for rel in "notes-staging:staging" "notes-prod:production"; do
     NAME=$(echo "$rel" | cut -d':' -f1)
@@ -25,36 +26,41 @@ for rel in "notes-staging:staging" "notes-prod:production"; do
         fail "Release '$NAME' en namespace '$NS' -> $STATUS"
     fi
 done
+
 info "2. Verificación de Réplicas y Recursos por Entorno"
 eval_check
-STAGING_REPLICAS=$(kubectl get deployment notes-backend -n staging -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "0")
+STAGING_REPLICAS=$(kubectl get deployment backend -n staging -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "0")
 if [ "$STAGING_REPLICAS" -eq 1 ]; then
     ok "Staging configurado correctamente con $STAGING_REPLICAS réplica."
 else
     fail "Staging tiene $STAGING_REPLICAS réplicas (esperado: 1)."
 fi
+
 eval_check
-PROD_REPLICAS=$(kubectl get deployment notes-backend -n production -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "0")
+PROD_REPLICAS=$(kubectl get deployment backend -n production -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "0")
 if [ "$PROD_REPLICAS" -ge 2 ]; then
     ok "Producción configurado con Alta Disponibilidad: $PROD_REPLICAS réplicas."
 else
     fail "Producción tiene $PROD_REPLICAS réplicas (esperado: >= 2)."
 fi
+
 info "3. Verificación de Enrutamiento Ingress (Capa 7)"
 eval_check
-HOST_STAGING=$(kubectl get ingress -n staging -o jsonpath='{.items.spec.rules.host}' 2>/dev/null || echo "")
+HOST_STAGING=$(kubectl get ingress -n staging -o jsonpath='{.items[0].spec.rules[0].host}' 2>/dev/null || echo "")
 if [ "$HOST_STAGING" = "staging.devops-portfolio.local" ]; then
     ok "Ingress de Staging apuntando a host: $HOST_STAGING"
 else
     fail "Host de Ingress en Staging inesperado: $HOST_STAGING"
 fi
+
 eval_check
-HOST_PROD=$(kubectl get ingress -n production -o jsonpath='{.items.spec.rules.host}' 2>/dev/null || echo "")
+HOST_PROD=$(kubectl get ingress -n production -o jsonpath='{.items[0].spec.rules[0].host}' 2>/dev/null || echo "")
 if [ "$HOST_PROD" = "devops-portfolio.com" ]; then
     ok "Ingress de Producción apuntando a host: $HOST_PROD"
 else
     fail "Host de Ingress en Producción inesperado: $HOST_PROD"
 fi
+
 info "4. Auditoría de Historial de Helm (Capacidad de Rollback)"
 eval_check
 REVS=$(helm history notes-prod -n production 2>/dev/null | wc -l || echo "0")
@@ -63,6 +69,7 @@ if [ "$REVS" -ge 2 ]; then
 else
     fail "No se registra historial suficiente para ejecutar rollback en Producción."
 fi
+
 echo -e "\n\033[1;35m==============================================================\033[0m"
 echo -e " Resultado: \033[1;32m$PASSED de $TOTAL pruebas superadas\033[0m"
 if [ "$PASSED" -eq "$TOTAL" ]; then
