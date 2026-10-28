@@ -9,7 +9,6 @@ env:
   CHART_PATH: ./devops-portfolio
 
 jobs:
-  # ── FASE 1: VALIDACIÓN Y RENDER PREVIO ────────
   render-validation:
     name: Lint & Render First Validation
     runs-on: ubuntu-latest
@@ -42,7 +41,6 @@ jobs:
                   print(f'[PASS] {f}: {len(docs)} objetos válidos de K8s.')
           "
 
-  # ── FASE 2: DESPLIEGUE EN STAGING (CON CLÚSTER EFÍMERO) ───────────────
   deploy-staging:
     name: Deploy to Staging (Helm)
     runs-on: ubuntu-latest
@@ -59,9 +57,13 @@ jobs:
       - name: Instalar Kind y levantar clúster efímero
         uses: helm/kind-action@v1.9.0
 
-      - name: Verificar o crear Namespace Staging
+      - name: Crear Namespace Staging con metadatos para Helm
         run: |
-          kubectl get namespace staging || kubectl create namespace staging
+          kubectl create namespace staging --dry-run=client -o yaml | \
+            kubectl label --local -f - app.kubernetes.io/managed-by=Helm --overwrite | \
+            kubectl annotate --local -f - meta.helm.sh/release-name=notes-staging --overwrite | \
+            kubectl annotate --local -f - meta.helm.sh/release-namespace=staging --overwrite | \
+            kubectl apply -f -
 
       - name: Actualizar/Instalar Release en Staging
         run: |
@@ -78,7 +80,6 @@ jobs:
         run: |
           kubectl get pods -n staging
 
-  # ── FASE 3: DESPLIEGUE EN PRODUCCIÓN (CON CLÚSTER EFÍMERO) ──
   deploy-production:
     name: Deploy to Production (Helm)
     runs-on: ubuntu-latest
@@ -96,9 +97,13 @@ jobs:
       - name: Instalar Kind y levantar clúster efímero de Prod
         uses: helm/kind-action@v1.9.0
 
-      - name: Verificar o crear Namespace Production
+      - name: Crear Namespace Production con metadatos para Helm
         run: |
-          kubectl get namespace production || kubectl create namespace production
+          kubectl create namespace production --dry-run=client -o yaml | \
+            kubectl label --local -f - app.kubernetes.io/managed-by=Helm --overwrite | \
+            kubectl annotate --local -f - meta.helm.sh/release-name=notes-prod --overwrite | \
+            kubectl annotate --local -f - meta.helm.sh/release-namespace=production --overwrite | \
+            kubectl apply -f -
 
       - name: Desplegar Release en Producción
         id: helm_deploy
