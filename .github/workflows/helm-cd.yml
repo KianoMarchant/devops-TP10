@@ -57,18 +57,11 @@ jobs:
       - name: Instalar Kind y levantar clúster efímero
         uses: helm/kind-action@v1.9.0
 
-      - name: Crear Namespace Staging con metadatos para Helm
-        run: |
-          kubectl create namespace staging --dry-run=client -o yaml | \
-            kubectl label --local -f - app.kubernetes.io/managed-by=Helm --overwrite | \
-            kubectl annotate --local -f - meta.helm.sh/release-name=notes-staging --overwrite | \
-            kubectl annotate --local -f - meta.helm.sh/release-namespace=staging --overwrite | \
-            kubectl apply -f -
-
       - name: Actualizar/Instalar Release en Staging
         run: |
           helm upgrade --install notes-staging ${{ env.CHART_PATH }} \
             --namespace staging \
+            --create-namespace \
             -f ${{ env.CHART_PATH }}/values-staging.yaml \
             --set backend.image.repository=nginx \
             --set backend.image.tag=alpine \
@@ -97,20 +90,13 @@ jobs:
       - name: Instalar Kind y levantar clúster efímero de Prod
         uses: helm/kind-action@v1.9.0
 
-      - name: Crear Namespace Production con metadatos para Helm
-        run: |
-          kubectl create namespace production --dry-run=client -o yaml | \
-            kubectl label --local -f - app.kubernetes.io/managed-by=Helm --overwrite | \
-            kubectl annotate --local -f - meta.helm.sh/release-name=notes-prod --overwrite | \
-            kubectl annotate --local -f - meta.helm.sh/release-namespace=production --overwrite | \
-            kubectl apply -f -
-
       - name: Desplegar Release en Producción
         id: helm_deploy
         run: |
           echo "Desplegando en Producción..."
           helm upgrade --install notes-prod ${{ env.CHART_PATH }} \
             --namespace production \
+            --create-namespace \
             -f ${{ env.CHART_PATH }}/values-prod.yaml \
             --set backend.image.repository=nginx \
             --set backend.image.tag=alpine \
@@ -126,3 +112,4 @@ jobs:
         if: always()
         run: |
           helm history notes-prod --namespace production || true
+
