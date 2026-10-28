@@ -57,9 +57,12 @@ jobs:
       - name: Instalar Kind y levantar clúster efímero
         uses: helm/kind-action@v1.9.0
 
-      - name: Crear Namespace Staging
+      - name: Asegurar Namespace Staging con Etiquetas de Helm
         run: |
-          kubectl create namespace staging
+          kubectl create namespace staging --dry-run=client -o yaml | kubectl apply -f -
+          kubectl label namespace staging app.kubernetes.io/managed-by=Helm --overwrite
+          kubectl annotate namespace staging meta.helm.sh/release-name=notes-staging --overwrite
+          kubectl annotate namespace staging meta.helm.sh/release-namespace=staging --overwrite
 
       - name: Actualizar/Instalar Release en Staging
         run: |
@@ -93,9 +96,12 @@ jobs:
       - name: Instalar Kind y levantar clúster efímero de Prod
         uses: helm/kind-action@v1.9.0
 
-      - name: Crear Namespace Production
+      - name: Asegurar Namespace Production con Etiquetas de Helm
         run: |
-          kubectl create namespace production
+          kubectl create namespace production --dry-run=client -o yaml | kubectl apply -f -
+          kubectl label namespace production app.kubernetes.io/managed-by=Helm --overwrite
+          kubectl annotate namespace production meta.helm.sh/release-name=notes-prod --overwrite
+          kubectl annotate namespace production meta.helm.sh/release-namespace=production --overwrite
 
       - name: Desplegar Release en Producción
         id: helm_deploy
