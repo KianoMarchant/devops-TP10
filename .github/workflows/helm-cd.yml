@@ -60,16 +60,13 @@ jobs:
       - name: Instalar Kind y levantar clúster efímero
         uses: helm/kind-action@v1.9.0
 
-      - name: Verificar Clúster K8s
-        run: |
-          kubectl cluster-info
-          kubectl get nodes
+      - name: Asegurar que el Namespace Staging exista
+        run: kubectl create namespace staging --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Actualizar/Instalar Release en Staging
         run: |
           helm upgrade --install notes-staging ${{ env.CHART_PATH }} \
             --namespace staging \
-            --create-namespace \
             -f ${{ env.CHART_PATH }}/values-staging.yaml \
             --set backend.image.repository=nginx \
             --set backend.image.tag=alpine \
@@ -100,13 +97,15 @@ jobs:
       - name: Instalar Kind y levantar clúster efímero de Prod
         uses: helm/kind-action@v1.9.0
 
+      - name: Asegurar que el Namespace Production exista
+        run: kubectl create namespace production --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Desplegar Release en Producción
         id: helm_deploy
         run: |
           echo "Desplegando en Producción..."
           helm upgrade --install notes-prod ${{ env.CHART_PATH }} \
             --namespace production \
-            --create-namespace \
             -f ${{ env.CHART_PATH }}/values-prod.yaml \
             --set backend.image.repository=nginx \
             --set backend.image.tag=alpine \
